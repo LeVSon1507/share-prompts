@@ -7,16 +7,17 @@ import { useState, useEffect } from 'react';
 import { signIn, signOut, useSession, getProviders } from 'next-auth/react';
 
 const Nav = () => {
-   const isUserLoggedIn = true;
+   const { data: session } = useSession();
+   const isUserLoggedIn = !!session?.user;
 
    const [providers, setProviders] = useState(null);
+   const [toggleDropdown, setToggleDropdown] = useState(false);
 
    useEffect(() => {
-      const handleProviders = async () => {
+      (async () => {
          const res = await getProviders();
          setProviders(res);
-      };
-      handleProviders();
+      })();
    }, []);
 
    return (
@@ -46,13 +47,74 @@ const Nav = () => {
 
                   <Link href={'profile'}>
                      <Image
-                        src={'/assets/images/profile.svg'}
+                        src={session?.user?.image}
                         width={37}
                         height={37}
                         className='rounded-full'
                         alt='profile'
                      />
                   </Link>
+               </div>
+            ) : (
+               <>
+                  {providers &&
+                     Object.values(providers).map(provider => {
+                        return (
+                           <button
+                              type='button'
+                              key={provider.name}
+                              onClick={() => signIn(provider.id)}
+                              className='black_btn'
+                           >
+                              Sign In
+                           </button>
+                        );
+                     })}
+               </>
+            )}
+         </div>
+
+         {/* Mobile Navigation */}
+         <div className='sm:hidden flex relative'>
+            {isUserLoggedIn ? (
+               <div className='flex'>
+                  <Image
+                     src={session?.user?.image}
+                     width={37}
+                     height={37}
+                     className='rounded-full'
+                     alt='profile'
+                     onClick={() => setToggleDropdown(prev => !prev)}
+                  />
+
+                  {toggleDropdown && (
+                     <div className='dropdown'>
+                        <Link
+                           className='dropdown_link'
+                           href={'/profile'}
+                           onClick={() => setToggleDropdown(false)}
+                        >
+                           My Profile
+                        </Link>
+                        <Link
+                           className='dropdown_link'
+                           href={'/create-prompt'}
+                           onClick={() => setToggleDropdown(false)}
+                        >
+                           Create Prompt
+                        </Link>
+                        <button
+                           type='button'
+                           onClick={() => {
+                              setToggleDropdown(false);
+                              signOut();
+                           }}
+                           className='mt-5 w-full black_btn'
+                        >
+                           Sign Out
+                        </button>
+                     </div>
+                  )}
                </div>
             ) : (
                <>
